@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader2, TrendingUp, Target, AlertTriangle, BarChart3 } from 'lucide-react';
+import { ArrowLeft, Loader2, TrendingUp, Target, AlertTriangle, BarChart3, DollarSign } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getH2H, getTeamLastMatches } from '../services/footballApi';
+import { findMatchOdds, extractOdds } from '../services/oddsApi';
 import { generatePrediction } from '../services/aiPredictor';
 
 const RISK_COLORS = { low: 'badge-green', medium: 'badge-yellow', high: 'badge-red' };
@@ -36,6 +37,7 @@ export default function MatchDetailPage() {
   const [h2h, setH2h] = useState([]);
   const [homeForm, setHomeForm] = useState([]);
   const [awayForm, setAwayForm] = useState([]);
+  const [odds, setOdds] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
 
@@ -59,6 +61,13 @@ export default function MatchDetailPage() {
       setH2h(h2hData);
       setHomeForm(homeMatches);
       setAwayForm(awayMatches);
+
+      // Load odds in background (informational only)
+      findMatchOdds(match.teams.home.name, match.teams.away.name).then((matchOdds) => {
+        if (matchOdds) {
+          setOdds(extractOdds(matchOdds));
+        }
+      });
     } catch (err) {
       console.error('Error loading data:', err);
     } finally {
@@ -206,6 +215,56 @@ export default function MatchDetailPage() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Odds - informational only */}
+      {odds && odds.length > 0 && (
+        <div className="card p-4">
+          <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
+            <DollarSign size={14} className="text-warning-400" /> Cuotas de referencia
+            <span className="text-xs text-slate-600 font-normal">(solo informativo)</span>
+          </h3>
+          <div className="space-y-2">
+            {odds.map((bk, i) => (
+              <div key={i} className="bg-slate-800 rounded-lg p-3">
+                <p className="text-xs text-slate-500 mb-2">{bk.bookmaker}</p>
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 text-center">
+                  {bk.home && (
+                    <div>
+                      <p className="text-xs text-slate-500">Local</p>
+                      <p className="font-bold text-white text-sm">{bk.home?.toFixed(2)}</p>
+                    </div>
+                  )}
+                  {bk.draw && (
+                    <div>
+                      <p className="text-xs text-slate-500">Empate</p>
+                      <p className="font-bold text-white text-sm">{bk.draw?.toFixed(2)}</p>
+                    </div>
+                  )}
+                  {bk.away && (
+                    <div>
+                      <p className="text-xs text-slate-500">Visita</p>
+                      <p className="font-bold text-white text-sm">{bk.away?.toFixed(2)}</p>
+                    </div>
+                  )}
+                  {bk.over25 && (
+                    <div>
+                      <p className="text-xs text-slate-500">Over 2.5</p>
+                      <p className="font-bold text-white text-sm">{bk.over25?.toFixed(2)}</p>
+                    </div>
+                  )}
+                  {bk.under25 && (
+                    <div>
+                      <p className="text-xs text-slate-500">Under 2.5</p>
+                      <p className="font-bold text-white text-sm">{bk.under25?.toFixed(2)}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-slate-600 mt-2">* Las cuotas son de referencia. La predicción se basa solo en datos deportivos.</p>
         </div>
       )}
 
