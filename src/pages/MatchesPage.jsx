@@ -81,6 +81,8 @@ export default function MatchesPage() {
   const [selectedLeagueId, setSelectedLeagueId] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [showLive, setShowLive] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('upcoming'); // 'all', 'upcoming', 'live', 'finished'
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
     let cancelled = false;
@@ -90,10 +92,10 @@ export default function MatchesPage() {
       } else {
         setLoading(true);
         try {
-          const data = await getFixturesByLeague(selectedLeagueId);
+          const data = await getFixturesByLeague(selectedLeagueId, selectedDate);
           if (!cancelled) {
             setMatches(data);
-            setFilteredMatches(data);
+            applyFilters(data, searchQuery, statusFilter);
           }
         } catch (err) {
           console.error(err);
@@ -108,22 +110,36 @@ export default function MatchesPage() {
     };
     load();
     return () => { cancelled = true; };
-  }, [selectedLeagueId, showLive]);
+  }, [selectedLeagueId, showLive, selectedDate]);
 
   useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredMatches(matches);
-      return;
+    applyFilters(matches, searchQuery, statusFilter);
+  }, [searchQuery, statusFilter]);
+
+  const applyFilters = (data, query, status) => {
+    let filtered = data;
+
+    // Filter by status
+    if (status === 'upcoming') {
+      filtered = filtered.filter((m) => m.fixture.status.short === 'NS');
+    } else if (status === 'live') {
+      filtered = filtered.filter((m) => ['1H', '2H', 'HT', 'ET', 'P'].includes(m.fixture.status.short));
+    } else if (status === 'finished') {
+      filtered = filtered.filter((m) => ['FT', 'AET', 'PEN'].includes(m.fixture.status.short));
     }
-    const q = searchQuery.toLowerCase();
-    setFilteredMatches(
-      matches.filter(
+
+    // Filter by search
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      filtered = filtered.filter(
         (m) =>
           m.teams.home.name.toLowerCase().includes(q) ||
           m.teams.away.name.toLowerCase().includes(q)
-      )
-    );
-  }, [searchQuery, matches]);
+      );
+    }
+
+    setFilteredMatches(filtered);
+  };
 
   const fetchMatches = async (leagueId) => {
     setLoading(true);
@@ -177,6 +193,64 @@ export default function MatchesPage() {
             <X size={16} />
           </button>
         )}
+      </div>
+
+      {/* Date selector + Status filter */}
+      <div className="flex flex-wrap gap-3 items-center">
+        {/* Date */}
+        <div className="flex items-center gap-2">
+          <Calendar size={14} className="text-slate-500" />
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+          />
+        </div>
+
+        {/* Quick date buttons */}
+        <div className="flex gap-1">
+          {[
+            { label: 'Hoy', offset: 0 },
+            { label: 'Mañana', offset: 1 },
+            { label: 'Pasado', offset: 2 },
+          ].map(({ label, offset }) => {
+            const d = new Date();
+            d.setDate(d.getDate() + offset);
+            const dateStr = d.toISOString().split('T')[0];
+            return (
+              <button
+                key={offset}
+                onClick={() => setSelectedDate(dateStr)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  selectedDate === dateStr ? 'bg-brand-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Status filter */}
+        <div className="flex gap-1 ml-auto">
+          {[
+            { key: 'upcoming', label: 'Próximos' },
+            { key: 'live', label: 'En vivo' },
+            { key: 'finished', label: 'Finalizados' },
+            { key: 'all', label: 'Todos' },
+          ].map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setStatusFilter(key)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                statusFilter === key ? 'bg-brand-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Live button + League selector */}

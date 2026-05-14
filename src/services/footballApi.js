@@ -31,21 +31,21 @@ export const getFixtures = async (date) => {
 /**
  * Get fixtures by league - uses date queries without season (free plan compatible)
  */
-export const getFixturesByLeague = async (leagueId) => {
-  const today = new Date().toISOString().split('T')[0];
-  const allMatches = await fetchApi(`/fixtures?date=${today}`);
+export const getFixturesByLeague = async (leagueId, date) => {
+  const d = date || new Date().toISOString().split('T')[0];
+  const allMatches = await fetchApi(`/fixtures?date=${d}`);
   
   if (!allMatches || allMatches.length === 0) return [];
 
   // If leagueId is 0 or null, return all matches
-  if (!leagueId) return allMatches.slice(0, 30);
+  if (!leagueId) return allMatches.slice(0, 50);
 
   // Filter by league
   const leagueMatches = allMatches.filter((m) => m.league.id === leagueId);
   if (leagueMatches.length > 0) return leagueMatches;
 
   // If no matches for selected league, return all matches
-  return allMatches.slice(0, 30);
+  return allMatches.slice(0, 50);
 };
 
 /**
