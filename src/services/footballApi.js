@@ -29,27 +29,28 @@ export const getFixtures = async (date) => {
 };
 
 /**
- * Get fixtures by league - uses date range for free plan compatibility
+ * Get fixtures by league - uses date queries without season (free plan compatible)
  */
-export const getFixturesByLeague = async (leagueId, season) => {
-  const s = season || 2025;
+export const getFixturesByLeague = async (leagueId) => {
   const today = new Date().toISOString().split('T')[0];
-  // Get today's matches first, then upcoming week
-  const todayMatches = await fetchApi(`/fixtures?league=${leagueId}&season=${s}&date=${today}`);
-  if (todayMatches.length > 0) return todayMatches;
 
-  // If no matches today, get matches for the next 7 days
-  const dates = [];
-  for (let i = 1; i <= 7; i++) {
+  // Get all matches for today, filter by league
+  const todayMatches = await fetchApi(`/fixtures?date=${today}`);
+  const leagueMatches = todayMatches.filter((m) => m.league.id === leagueId);
+  if (leagueMatches.length > 0) return leagueMatches;
+
+  // If no matches today, search next 3 days
+  for (let i = 1; i <= 3; i++) {
     const d = new Date();
     d.setDate(d.getDate() + i);
-    dates.push(d.toISOString().split('T')[0]);
+    const dateStr = d.toISOString().split('T')[0];
+    const matches = await fetchApi(`/fixtures?date=${dateStr}`);
+    const filtered = matches.filter((m) => m.league.id === leagueId);
+    if (filtered.length > 0) return filtered;
   }
 
-  for (const date of dates) {
-    const matches = await fetchApi(`/fixtures?league=${leagueId}&season=${s}&date=${date}`);
-    if (matches.length > 0) return matches;
-  }
+  // Fallback: show all today's matches
+  if (todayMatches.length > 0) return todayMatches.slice(0, 20);
 
   return [];
 };
