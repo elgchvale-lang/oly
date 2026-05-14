@@ -78,7 +78,7 @@ export default function MatchesPage() {
   const [matches, setMatches] = useState([]);
   const [filteredMatches, setFilteredMatches] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedLeague, setSelectedLeague] = useState(LEAGUES[0]);
+  const [selectedLeague, setSelectedLeague] = useState({ id: 0, name: 'Todos' });
   const [searchQuery, setSearchQuery] = useState('');
   const [showLive, setShowLive] = useState(false);
 
@@ -173,6 +173,14 @@ export default function MatchesPage() {
 
         {!showLive && (
           <div className="flex gap-2 overflow-x-auto pb-2">
+            <button
+              onClick={() => setSelectedLeague({ id: 0, name: 'Todos' })}
+              className={`shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                selectedLeague.id === 0 ? 'bg-brand-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700'
+              }`}
+            >
+              🌍 Todos
+            </button>
             {LEAGUES.map((league) => (
               <button
                 key={league.id}

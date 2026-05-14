@@ -33,26 +33,19 @@ export const getFixtures = async (date) => {
  */
 export const getFixturesByLeague = async (leagueId) => {
   const today = new Date().toISOString().split('T')[0];
+  const allMatches = await fetchApi(`/fixtures?date=${today}`);
+  
+  if (!allMatches || allMatches.length === 0) return [];
 
-  // Get all matches for today, filter by league
-  const todayMatches = await fetchApi(`/fixtures?date=${today}`);
-  const leagueMatches = todayMatches.filter((m) => m.league.id === leagueId);
+  // If leagueId is 0 or null, return all matches
+  if (!leagueId) return allMatches.slice(0, 30);
+
+  // Filter by league
+  const leagueMatches = allMatches.filter((m) => m.league.id === leagueId);
   if (leagueMatches.length > 0) return leagueMatches;
 
-  // If no matches today, search next 3 days
-  for (let i = 1; i <= 3; i++) {
-    const d = new Date();
-    d.setDate(d.getDate() + i);
-    const dateStr = d.toISOString().split('T')[0];
-    const matches = await fetchApi(`/fixtures?date=${dateStr}`);
-    const filtered = matches.filter((m) => m.league.id === leagueId);
-    if (filtered.length > 0) return filtered;
-  }
-
-  // Fallback: show all today's matches
-  if (todayMatches.length > 0) return todayMatches.slice(0, 20);
-
-  return [];
+  // If no matches for selected league, return all matches
+  return allMatches.slice(0, 30);
 };
 
 /**
