@@ -52,22 +52,21 @@ export default function MatchDetailPage() {
       const homeId = match.teams.home.id;
       const awayId = match.teams.away.id;
 
-      const [h2hData, homeMatches, awayMatches] = await Promise.all([
+      // These may fail if API limit reached - that's ok
+      const results = await Promise.allSettled([
         getH2H(homeId, awayId),
         getTeamLastMatches(homeId, 5),
         getTeamLastMatches(awayId, 5),
       ]);
 
-      setH2h(h2hData);
-      setHomeForm(homeMatches);
-      setAwayForm(awayMatches);
+      if (results[0].status === 'fulfilled') setH2h(results[0].value || []);
+      if (results[1].status === 'fulfilled') setHomeForm(results[1].value || []);
+      if (results[2].status === 'fulfilled') setAwayForm(results[2].value || []);
 
       // Load odds in background (informational only)
       findMatchOdds(match.teams.home.name, match.teams.away.name).then((matchOdds) => {
-        if (matchOdds) {
-          setOdds(extractOdds(matchOdds));
-        }
-      });
+        if (matchOdds) setOdds(extractOdds(matchOdds));
+      }).catch(() => {});
     } catch (err) {
       console.error('Error loading data:', err);
     } finally {
