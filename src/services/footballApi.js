@@ -32,7 +32,7 @@ export const getFixtures = async (date) => {
  * Get fixtures by league - uses date range for free plan compatibility
  */
 export const getFixturesByLeague = async (leagueId, season) => {
-  const s = season || 2024;
+  const s = season || 2025;
   const today = new Date().toISOString().split('T')[0];
   // Get today's matches first, then upcoming week
   const todayMatches = await fetchApi(`/fixtures?league=${leagueId}&season=${s}&date=${today}`);
@@ -72,7 +72,7 @@ export const getH2H = async (team1Id, team2Id) => {
  * Get team statistics for a specific league/season
  */
 export const getTeamStats = async (teamId, leagueId, season) => {
-  const s = season || 2024;
+  const s = season || 2025;
   const res = await fetch(`${BASE_URL}/teams/statistics?team=${teamId}&league=${leagueId}&season=${s}`, { headers });
   if (!res.ok) return {};
   const data = await res.json();
@@ -97,7 +97,7 @@ export const getFixtureStats = async (fixtureId) => {
  * Get standings for a league
  */
 export const getStandings = async (leagueId, season) => {
-  const s = season || 2024;
+  const s = season || 2025;
   const res = await fetch(`${BASE_URL}/standings?league=${leagueId}&season=${s}`, { headers });
   if (!res.ok) return [];
   const data = await res.json();
