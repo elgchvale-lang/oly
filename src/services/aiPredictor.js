@@ -5,29 +5,26 @@
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY || '';
 
 /**
- * Generates AI prediction for a match based on stats and odds
+ * Generates AI prediction based on real sports data (stats, H2H, form)
  */
 export const generatePrediction = async (matchData) => {
-  const { homeTeam, awayTeam, odds, h2h, homeForm, awayForm, league } = matchData;
+  const { homeTeam, awayTeam, h2h, homeForm, awayForm, league } = matchData;
 
-  const prompt = `You are an expert sports betting analyst. Analyze this match and provide betting recommendations.
+  const prompt = `You are an expert sports data analyst. Analyze this match using ONLY the statistical data provided. Do NOT reference bookmaker odds or betting sites.
 
 MATCH: ${homeTeam} vs ${awayTeam}
 LEAGUE: ${league}
 
-ODDS (decimal):
-${odds ? JSON.stringify(odds, null, 2) : 'Not available'}
-
 HEAD TO HEAD (last meetings):
-${h2h ? JSON.stringify(h2h, null, 2) : 'Not available'}
+${h2h && h2h.length > 0 ? JSON.stringify(h2h, null, 2) : 'No data available'}
 
-HOME TEAM RECENT FORM:
-${homeForm ? JSON.stringify(homeForm, null, 2) : 'Not available'}
+HOME TEAM (${homeTeam}) RECENT FORM (last 5 matches):
+${homeForm && homeForm.length > 0 ? JSON.stringify(homeForm, null, 2) : 'No data available'}
 
-AWAY TEAM RECENT FORM:
-${awayForm ? JSON.stringify(awayForm, null, 2) : 'Not available'}
+AWAY TEAM (${awayTeam}) RECENT FORM (last 5 matches):
+${awayForm && awayForm.length > 0 ? JSON.stringify(awayForm, null, 2) : 'No data available'}
 
-Based on this data, provide your analysis as a JSON object with this EXACT structure:
+Based ONLY on the statistical data above, provide your analysis as a JSON object:
 
 {
   "winner": "home" | "away" | "draw",

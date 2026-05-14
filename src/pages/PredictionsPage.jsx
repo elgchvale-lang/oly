@@ -2,43 +2,37 @@ import React, { useState } from 'react';
 import { Loader2, TrendingUp, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { generateQuickPrediction } from '../services/aiPredictor';
-import { getOdds } from '../services/oddsApi';
+import { getFixturesByLeague, LEAGUES } from '../services/footballApi';
 
 export default function PredictionsPage() {
   const [predictions, setPredictions] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [sport, setSport] = useState('soccer_epl');
-
-  const SPORTS = [
-    { key: 'soccer_epl', label: 'Premier League' },
-    { key: 'soccer_spain_la_liga', label: 'La Liga' },
-    { key: 'soccer_uefa_champs_league', label: 'Champions' },
-    { key: 'basketball_nba', label: 'NBA' },
-    { key: 'mma_mixed_martial_arts', label: 'UFC' },
-  ];
+  const [selectedLeague, setSelectedLeague] = useState(LEAGUES[0]);
 
   const generateAll = async () => {
     setLoading(true);
     try {
-      const matches = await getOdds(sport);
-      if (matches.length === 0) {
-        toast.error('No hay partidos disponibles');
+      const fixtures = await getFixturesByLeague(selectedLeague.id);
+      const upcoming = fixtures.filter((f) => f.fixture.status.short === 'NS').slice(0, 10);
+
+      if (upcoming.length === 0) {
+        toast.error('No hay próximos partidos para analizar');
         setLoading(false);
         return;
       }
 
-      const matchList = matches.slice(0, 10).map((m) => ({
-        homeTeam: m.home_team,
-        awayTeam: m.away_team,
-        league: m.sport_title,
+      const matchList = upcoming.map((m) => ({
+        homeTeam: m.teams.home.name,
+        awayTeam: m.teams.away.name,
+        league: m.league.name,
       }));
 
       const results = await generateQuickPrediction(matchList);
       setPredictions(results);
-      toast.success(`${results.length} predicciones generadas`);
+      toast.success(`${results.length} análisis generados`);
     } catch (err) {
       console.error(err);
-      toast.error('Error al generar predicciones');
+      toast.error('Error al generar análisis');
     } finally {
       setLoading(false);
     }
@@ -48,31 +42,29 @@ export default function PredictionsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Predicciones IA</h1>
-        <p className="text-slate-500 text-sm mt-1">Genera predicciones rápidas para todos los partidos del día</p>
+        <p className="text-slate-500 text-sm mt-1">Análisis rápido basado en datos deportivos reales</p>
       </div>
 
-      {/* Sport selector + generate button */}
-      <div className="card p-4 flex flex-col sm:flex-row gap-3 items-center">
-        <select
-          value={sport}
-          onChange={(e) => setSport(e.target.value)}
-          className="bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm w-full sm:w-auto"
-        >
-          {SPORTS.map((s) => (
-            <option key={s.key} value={s.key}>{s.label}</option>
+      <div className="card p-4 space-y-3">
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {LEAGUES.slice(0, 8).map((league) => (
+            <button
+              key={league.id}
+              onClick={() => setSelectedLeague(league)}
+              className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                selectedLeague.id === league.id ? 'bg-brand-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'
+              }`}
+            >
+              {league.name}
+            </button>
           ))}
-        </select>
-        <button
-          onClick={generateAll}
-          disabled={loading}
-          className="btn-primary flex items-center gap-2 w-full sm:w-auto justify-center"
-        >
+        </div>
+        <button onClick={generateAll} disabled={loading} className="btn-primary flex items-center gap-2 w-full justify-center">
           {loading ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
           {loading ? 'Analizando...' : 'Generar predicciones'}
         </button>
       </div>
 
-      {/* Results */}
       {predictions.length > 0 && (
         <div className="space-y-3">
           {predictions.map((pred, i) => (
@@ -97,7 +89,7 @@ export default function PredictionsPage() {
       {predictions.length === 0 && !loading && (
         <div className="card p-12 text-center text-slate-500">
           <TrendingUp size={32} className="mx-auto mb-3 opacity-30" />
-          <p>Selecciona un deporte y genera predicciones.</p>
+          <p>Selecciona una liga y genera predicciones.</p>
         </div>
       )}
     </div>
