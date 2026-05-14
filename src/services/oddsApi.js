@@ -4,7 +4,7 @@
  * NOT used for predictions - those are based on sports data only
  */
 
-const ODDS_API_KEY = import.meta.env.VITE_ODDS_API_KEY || '266f9b953c2d027ac55b9fef1d015151';
+const ODDS_API_KEY = '266f9b953c2d027ac55b9fef1d015151';
 const BASE_URL = 'https://api.the-odds-api.com/v4';
 
 /**

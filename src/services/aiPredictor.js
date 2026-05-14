@@ -6,7 +6,7 @@
 const _p1 = 'gsk_3Le5uhkL6ypfo';
 const _p2 = 'XJRh7vgWGdyb3FY8HJO';
 const _p3 = 'DWivnKiRwWHK9OmHK26N';
-const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY || `${_p1}${_p2}${_p3}`;
+const GROQ_API_KEY = `${_p1}${_p2}${_p3}`;
 
 /**
  * Generates AI prediction based on real sports data (stats, H2H, form)
