@@ -3,7 +3,7 @@
  * Provides match stats, H2H, lineups, standings
  */
 
-const API_KEY = import.meta.env.VITE_FOOTBALL_API_KEY || '59f7bfc524154cf79dc5cdacc557473c';
+const API_KEY = '59f7bfc524154cf79dc5cdacc557473c';
 const BASE_URL = 'https://v3.football.api-sports.io';
 
 const headers = {
