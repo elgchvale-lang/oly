@@ -237,11 +237,45 @@ export default function MatchesPage() {
       ) : (
         <>
           <p className="text-xs text-slate-500">{filteredMatches.length} partido{filteredMatches.length !== 1 ? 's' : ''}</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredMatches.map((match) => (
-              <MatchCard key={match.fixture.id} match={match} />
-            ))}
-          </div>
+          {(() => {
+            // Group matches by league
+            const grouped = {};
+            filteredMatches.forEach((match) => {
+              const key = `${match.league.id}-${match.league.name}`;
+              if (!grouped[key]) {
+                grouped[key] = {
+                  id: match.league.id,
+                  name: match.league.name,
+                  country: match.league.country,
+                  logo: match.league.logo,
+                  matches: [],
+                };
+              }
+              grouped[key].matches.push(match);
+            });
+
+            return Object.values(grouped).map((league) => (
+              <div key={league.id} className="space-y-3">
+                {/* League header */}
+                <div className="flex items-center gap-3 pt-4 pb-1 border-b border-slate-800">
+                  {league.logo && (
+                    <img src={league.logo} alt={league.name} className="w-5 h-5 object-contain" />
+                  )}
+                  <div>
+                    <h3 className="text-sm font-semibold text-white">{league.name}</h3>
+                    <p className="text-xs text-slate-500">{league.country}</p>
+                  </div>
+                  <span className="text-xs text-slate-600 ml-auto">{league.matches.length} partido{league.matches.length !== 1 ? 's' : ''}</span>
+                </div>
+                {/* League matches */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {league.matches.map((match) => (
+                    <MatchCard key={match.fixture.id} match={match} />
+                  ))}
+                </div>
+              </div>
+            ));
+          })()}
         </>
       )}
     </div>
