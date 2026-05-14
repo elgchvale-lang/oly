@@ -11,14 +11,12 @@ const headers = {
 };
 
 const fetchApi = async (endpoint) => {
-  console.log(`[Oly] Fetching: ${BASE_URL}${endpoint}`);
   const res = await fetch(`${BASE_URL}${endpoint}`, { headers });
   if (!res.ok) {
     console.error(`API-Football error: ${res.status} for ${endpoint}`);
     return [];
   }
   const data = await res.json();
-  console.log(`[Oly] Got ${data.results} results for ${endpoint}`);
   return data.response || [];
 };
 

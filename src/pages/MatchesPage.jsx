@@ -83,11 +83,31 @@ export default function MatchesPage() {
   const [showLive, setShowLive] = useState(false);
 
   useEffect(() => {
-    if (showLive) {
-      fetchLive();
-    } else {
-      fetchMatches(selectedLeagueId);
-    }
+    let cancelled = false;
+    const load = async () => {
+      if (showLive) {
+        await fetchLive();
+      } else {
+        setLoading(true);
+        try {
+          const data = await getFixturesByLeague(selectedLeagueId);
+          if (!cancelled) {
+            setMatches(data);
+            setFilteredMatches(data);
+          }
+        } catch (err) {
+          console.error(err);
+          if (!cancelled) {
+            toast.error('Error al cargar partidos');
+            setMatches([]);
+          }
+        } finally {
+          if (!cancelled) setLoading(false);
+        }
+      }
+    };
+    load();
+    return () => { cancelled = true; };
   }, [selectedLeagueId, showLive]);
 
   useEffect(() => {
