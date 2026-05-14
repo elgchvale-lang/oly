@@ -6,13 +6,13 @@ import { getSports, getOdds } from '../services/oddsApi';
 
 const POPULAR_SPORTS = [
   { key: 'soccer_chile_primera_division', label: '🇨🇱 Liga Chilena' },
+  { key: 'soccer_conmebol_copa_libertadores', label: 'Copa Libertadores' },
   { key: 'soccer_epl', label: 'Premier League' },
   { key: 'soccer_spain_la_liga', label: 'La Liga' },
   { key: 'soccer_germany_bundesliga', label: 'Bundesliga' },
   { key: 'soccer_italy_serie_a', label: 'Serie A' },
   { key: 'soccer_france_ligue_one', label: 'Ligue 1' },
   { key: 'soccer_uefa_champs_league', label: 'Champions League' },
-  { key: 'soccer_copa_libertadores', label: 'Copa Libertadores' },
   { key: 'soccer_brazil_campeonato', label: 'Brasileirão' },
   { key: 'soccer_argentina_primera_division', label: 'Liga Argentina' },
   { key: 'soccer_mexico_ligamx', label: 'Liga MX' },
@@ -91,7 +91,7 @@ export default function MatchesPage() {
   const [matches, setMatches] = useState([]);
   const [allMatches, setAllMatches] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedSport, setSelectedSport] = useState('soccer_chile_primera_division');
+  const [selectedSport, setSelectedSport] = useState('soccer_epl');
   const [searchQuery, setSearchQuery] = useState('');
   const [allSports, setAllSports] = useState([]);
   const [showAllSports, setShowAllSports] = useState(false);

@@ -25,7 +25,10 @@ export const getOdds = async (sportKey, markets = 'h2h', regions = 'us,eu') => {
   const res = await fetch(
     `${BASE_URL}/sports/${sportKey}/odds?apiKey=${ODDS_API_KEY}&regions=${regions}&markets=${markets}&oddsFormat=decimal`
   );
-  if (!res.ok) throw new Error('Failed to fetch odds');
+  if (!res.ok) {
+    if (res.status === 404) return []; // Sport not available
+    throw new Error('Failed to fetch odds');
+  }
   return res.json();
 };
 
