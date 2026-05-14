@@ -29,11 +29,29 @@ export const getFixtures = async (date) => {
 };
 
 /**
- * Get fixtures by league
+ * Get fixtures by league - uses date range for free plan compatibility
  */
 export const getFixturesByLeague = async (leagueId, season) => {
   const s = season || 2024;
-  return fetchApi(`/fixtures?league=${leagueId}&season=${s}&next=20`);
+  const today = new Date().toISOString().split('T')[0];
+  // Get today's matches first, then upcoming week
+  const todayMatches = await fetchApi(`/fixtures?league=${leagueId}&season=${s}&date=${today}`);
+  if (todayMatches.length > 0) return todayMatches;
+
+  // If no matches today, get matches for the next 7 days
+  const dates = [];
+  for (let i = 1; i <= 7; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    dates.push(d.toISOString().split('T')[0]);
+  }
+
+  for (const date of dates) {
+    const matches = await fetchApi(`/fixtures?league=${leagueId}&season=${s}&date=${date}`);
+    if (matches.length > 0) return matches;
+  }
+
+  return [];
 };
 
 /**
