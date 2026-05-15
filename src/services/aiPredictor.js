@@ -1,54 +1,10 @@
-/**
- * AI Predictor - Uses Groq to analyze match data and generate betting predictions
- */
-
 // Key parts assembled at runtime to avoid secret scanning
 const _p1 = 'gsk_3Le5uhkL6ypfo';
 const _p2 = 'XJRh7vgWGdyb3FY8HJO';
 const _p3 = 'DWivnKiRwWHK9OmHK26N';
 const GROQ_API_KEY = `${_p1}${_p2}${_p3}`;
 
-/**
- * Generates AI prediction based on real sports data (stats, H2H, form)
- */
-export const generatePrediction = async (matchData) => {
-  const { homeTeam, awayTeam, h2h, homeForm, awayForm, league } = matchData;
-
-  const prompt = `You are an expert sports data analyst. Analyze this match using ONLY the statistical data provided. Do NOT reference bookmaker odds or betting sites.
-
-MATCH: ${homeTeam} vs ${awayTeam}
-LEAGUE: ${league}
-
-HEAD TO HEAD (last meetings):
-${h2h && h2h.length > 0 ? JSON.stringify(h2h, null, 2) : 'No data available'}
-
-HOME TEAM (${homeTeam}) RECENT FORM (last 5 matches):
-${homeForm && homeForm.length > 0 ? JSON.stringify(homeForm, null, 2) : 'No data available'}
-
-AWAY TEAM (${awayTeam}) RECENT FORM (last 5 matches):
-${awayForm && awayForm.length > 0 ? JSON.stringify(awayForm, null, 2) : 'No data available'}
-
-Based ONLY on the statistical data above, provide your analysis as a JSON object:
-
-{
-  "winner": "home" | "away" | "draw",
-  "confidence": number between 1-100,
-  "predictedScore": "X-X",
-  "recommendations": [
-    {
-      "type": "bet type (e.g., '1X2', 'Over/Under 2.5', 'Both Teams Score', 'Handicap')",
-      "pick": "specific pick (e.g., 'Home Win', 'Over 2.5', 'Yes', 'Home -1')",
-      "confidence": number between 1-100,
-      "reasoning": "brief explanation in Spanish"
-    }
-  ],
-  "analysis": "2-3 sentence analysis in Spanish explaining the overall prediction",
-  "riskLevel": "low" | "medium" | "high",
-  "valueRating": number between 1-10 (how good the value is based on odds vs probability)
-}
-
-Provide 3-4 recommendations with different bet types. Be realistic and data-driven. Return ONLY the JSON, no extra text.`;
-
+const groqFetch = async (messages, maxTokens = 2000) => {
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -57,62 +13,165 @@ Provide 3-4 recommendations with different bet types. Be realistic and data-driv
     },
     body: JSON.stringify({
       model: 'llama-3.3-70b-versatile',
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 1500,
-      temperature: 0.3,
+      messages,
+      max_tokens: maxTokens,
+      temperature: 0.2,
     }),
   });
-
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
     throw new Error(err.error?.message || `Groq error: ${response.status}`);
   }
-
   const data = await response.json();
   const content = data.choices[0].message.content.trim();
-  const cleaned = content.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
-  return JSON.parse(cleaned);
+  return content.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
 };
 
 /**
- * Quick prediction for match list (lighter, faster)
+ * Single call that returns both team stats AND prediction
+ * Avoids rate limiting by combining into one request
+ */
+export const generateFullAnalysis = async (matchData) => {
+  const { homeTeam, awayTeam, league, h2h, homeForm, awayForm, homeTeamId, awayTeamId } = matchData;
+
+  const h2hText = h2h && h2h.length > 0
+    ? h2h.slice(0, 5).map(m => `${m.teams.home.name} ${m.goals.home}-${m.goals.away} ${m.teams.away.name}`).join(' | ')
+    : null;
+
+  const homeFormText = homeForm && homeForm.length > 0
+    ? homeForm.slice(0, 5).map(m => {
+        const isHome = m.teams.home.id === homeTeamId;
+        const won = isHome ? m.teams.home.winner : m.teams.away.winner;
+        const draw = !m.teams.home.winner && !m.teams.away.winner;
+        return won ? 'W' : draw ? 'D' : 'L';
+      }).join('')
+    : null;
+
+  const awayFormText = awayForm && awayForm.length > 0
+    ? awayForm.slice(0, 5).map(m => {
+        const isHome = m.teams.home.id === awayTeamId;
+        const won = isHome ? m.teams.home.winner : m.teams.away.winner;
+        const draw = !m.teams.home.winner && !m.teams.away.winner;
+        return won ? 'W' : draw ? 'D' : 'L';
+      }).join('')
+    : null;
+
+  const prompt = `You are an expert football analyst and betting advisor with deep knowledge of ${league}.
+
+MATCH: ${homeTeam} vs ${awayTeam} (${league})
+${h2hText ? `RECENT H2H FROM API: ${h2hText}` : ''}
+${homeFormText ? `${homeTeam} RECENT FORM FROM API: ${homeFormText}` : ''}
+${awayFormText ? `${awayTeam} RECENT FORM FROM API: ${awayFormText}` : ''}
+
+Provide a complete analysis in ONE JSON response:
+
+{
+  "teamStats": {
+    "home": {
+      "recentForm": ["W","D","L","W","W"],
+      "goalsScored": "X.X por partido",
+      "goalsConceded": "X.X por partido",
+      "position": "Xo en la liga",
+      "homeRecord": "V-E-D",
+      "strengths": "fortalezas en español",
+      "keyPlayers": ["jugador1", "jugador2"]
+    },
+    "away": {
+      "recentForm": ["W","D","L","W","W"],
+      "goalsScored": "X.X por partido",
+      "goalsConceded": "X.X por partido",
+      "position": "Xo en la liga",
+      "awayRecord": "V-E-D",
+      "strengths": "fortalezas en español",
+      "keyPlayers": ["jugador1", "jugador2"]
+    },
+    "h2h": {
+      "homeWins": 0,
+      "draws": 0,
+      "awayWins": 0,
+      "avgGoals": "X.X",
+      "lastResults": ["resultado1", "resultado2", "resultado3"]
+    },
+    "context": "contexto del partido en español (lesiones, suspensiones, motivación)"
+  },
+  "prediction": {
+    "winner": "home",
+    "confidence": 75,
+    "predictedScore": "2-1",
+    "analysis": "análisis de 3-4 oraciones en español con estadísticas específicas",
+    "riskLevel": "medium",
+    "valueRating": 7,
+    "keyFactors": ["factor1 en español", "factor2", "factor3"],
+    "recommendations": [
+      {
+        "type": "1X2",
+        "pick": "Victoria Local",
+        "confidence": 72,
+        "reasoning": "explicación en español con estadísticas"
+      },
+      {
+        "type": "Over/Under",
+        "pick": "Más de 2.5 goles",
+        "confidence": 65,
+        "reasoning": "explicación en español"
+      },
+      {
+        "type": "Ambos Marcan",
+        "pick": "Sí",
+        "confidence": 60,
+        "reasoning": "explicación en español"
+      },
+      {
+        "type": "Resultado Exacto",
+        "pick": "2-1",
+        "confidence": 25,
+        "reasoning": "explicación en español"
+      }
+    ]
+  }
+}
+
+Use your knowledge of these teams. Be specific. Return ONLY the JSON.`;
+
+  const content = await groqFetch([{ role: 'user', content: prompt }], 2500);
+  return JSON.parse(content);
+};
+
+/**
+ * Legacy wrapper - stats now come from generateFullAnalysis
+ */
+export const getTeamStatsFromAI = async () => null;
+
+/**
+ * Legacy wrapper for compatibility
+ */
+export const generatePrediction = async (matchData) => {
+  const result = await generateFullAnalysis(matchData);
+  return result.prediction;
+};
+
+/**
+ * Quick prediction for match list
  */
 export const generateQuickPrediction = async (matches) => {
   const matchList = matches.map((m) => `${m.homeTeam} vs ${m.awayTeam} (${m.league})`).join('\n');
 
-  const prompt = `You are a sports betting expert. For each match, give a quick prediction. Return a JSON array.
+  const prompt = `You are a football betting expert. For each match, give a quick prediction.
 
 MATCHES:
 ${matchList}
 
-For each match return:
-{
+Return a JSON array:
+[{
   "match": "Team A vs Team B",
-  "pick": "recommended bet (e.g., 'Home Win', 'Over 2.5', 'Draw')",
-  "confidence": number 1-100,
-  "riskLevel": "low" | "medium" | "high"
-}
+  "pick": "apuesta recomendada en español",
+  "confidence": 75,
+  "riskLevel": "low",
+  "reasoning": "una oración en español"
+}]
 
-Return ONLY the JSON array, no extra text.`;
+Return ONLY the JSON array.`;
 
-  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${GROQ_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 2000,
-      temperature: 0.3,
-    }),
-  });
-
-  if (!response.ok) throw new Error('Quick prediction failed');
-
-  const data = await response.json();
-  const content = data.choices[0].message.content.trim();
-  const cleaned = content.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
-  return JSON.parse(cleaned);
+  const content = await groqFetch([{ role: 'user', content: prompt }], 2000);
+  return JSON.parse(content);
 };

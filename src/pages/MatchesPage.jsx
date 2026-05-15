@@ -82,7 +82,11 @@ export default function MatchesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showLive, setShowLive] = useState(false);
   const [statusFilter, setStatusFilter] = useState('upcoming'); // 'all', 'upcoming', 'live', 'finished'
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
+  });
 
   useEffect(() => {
     let cancelled = false;

@@ -34,6 +34,9 @@ export const getFixtures = async (date) => {
  */
 export const getFixturesByLeague = async (leagueId, date) => {
   const d = date || new Date().toISOString().split('T')[0];
+  
+  // When filtering by league, season is required by the API
+  // Use date-only query and filter client-side to avoid season issues
   const allMatches = await fetchApi(`/fixtures?date=${d}`);
   
   if (!allMatches || allMatches.length === 0) return [];
@@ -41,7 +44,7 @@ export const getFixturesByLeague = async (leagueId, date) => {
   // Show all matches if no league selected
   if (!leagueId) return allMatches;
 
-  // Filter strictly by league - no fallback to all matches
+  // Filter strictly by league
   return allMatches.filter((m) => m.league.id === leagueId);
 };
 
@@ -53,17 +56,17 @@ export const getLiveFixtures = async () => {
 };
 
 /**
- * Get head-to-head between two teams
+ * Get head-to-head between two teams (uses last 10 meetings, no season needed)
  */
 export const getH2H = async (team1Id, team2Id) => {
   return fetchApi(`/fixtures/headtohead?h2h=${team1Id}-${team2Id}&last=10`);
 };
 
 /**
- * Get team statistics for a specific league/season
+ * Get team statistics for season 2024 (max allowed on free plan)
  */
 export const getTeamStats = async (teamId, leagueId, season) => {
-  const s = season || 2025;
+  const s = season || 2024;
   const res = await fetch(`${BASE_URL}/teams/statistics?team=${teamId}&league=${leagueId}&season=${s}`, { headers });
   if (!res.ok) return {};
   const data = await res.json();
@@ -71,7 +74,7 @@ export const getTeamStats = async (teamId, leagueId, season) => {
 };
 
 /**
- * Get last N fixtures for a team
+ * Get last N fixtures for a team (no season needed)
  */
 export const getTeamLastMatches = async (teamId, last = 5) => {
   return fetchApi(`/fixtures?team=${teamId}&last=${last}`);

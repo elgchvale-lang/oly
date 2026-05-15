@@ -4,7 +4,7 @@ import { ArrowLeft, Loader2, TrendingUp, Target, AlertTriangle, BarChart3, Dolla
 import toast from 'react-hot-toast';
 import { getH2H, getTeamLastMatches } from '../services/footballApi';
 import { findMatchOdds, extractOdds } from '../services/oddsApi';
-import { generatePrediction } from '../services/aiPredictor';
+import { generatePrediction, generateFullAnalysis, getTeamStatsFromAI } from '../services/aiPredictor';
 
 const RISK_COLORS = { low: 'badge-green', medium: 'badge-yellow', high: 'badge-red' };
 const RISK_LABELS = { low: 'Bajo riesgo', medium: 'Riesgo medio', high: 'Alto riesgo' };
@@ -37,6 +37,7 @@ export default function MatchDetailPage() {
   const [h2h, setH2h] = useState([]);
   const [homeForm, setHomeForm] = useState([]);
   const [awayForm, setAwayForm] = useState([]);
+  const [aiStats, setAiStats] = useState(null);
   const [odds, setOdds] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
@@ -52,18 +53,18 @@ export default function MatchDetailPage() {
       const homeId = match.teams.home.id;
       const awayId = match.teams.away.id;
 
-      // These may fail if API limit reached - that's ok
-      const results = await Promise.allSettled([
+      // Load API stats (H2H and form) - these enhance the AI analysis
+      const [h2hResult, homeResult, awayResult] = await Promise.allSettled([
         getH2H(homeId, awayId),
         getTeamLastMatches(homeId, 5),
         getTeamLastMatches(awayId, 5),
       ]);
 
-      if (results[0].status === 'fulfilled') setH2h(results[0].value || []);
-      if (results[1].status === 'fulfilled') setHomeForm(results[1].value || []);
-      if (results[2].status === 'fulfilled') setAwayForm(results[2].value || []);
+      if (h2hResult.status === 'fulfilled') setH2h(h2hResult.value || []);
+      if (homeResult.status === 'fulfilled') setHomeForm(homeResult.value || []);
+      if (awayResult.status === 'fulfilled') setAwayForm(awayResult.value || []);
 
-      // Load odds in background (informational only)
+      // Load odds in background
       findMatchOdds(match.teams.home.name, match.teams.away.name).then((matchOdds) => {
         if (matchOdds) setOdds(extractOdds(matchOdds));
       }).catch(() => {});
@@ -77,41 +78,25 @@ export default function MatchDetailPage() {
   const analyzeMatch = async () => {
     setLoading(true);
     try {
-      const h2hSummary = h2h.map((m) => ({
-        date: m.fixture.date.split('T')[0],
-        result: `${m.teams.home.name} ${m.goals.home}-${m.goals.away} ${m.teams.away.name}`,
-        winner: m.teams.home.winner ? 'home' : m.teams.away.winner ? 'away' : 'draw',
-      }));
-
-      const homeFormSummary = homeForm.map((m) => ({
-        vs: m.teams.home.id === match.teams.home.id ? m.teams.away.name : m.teams.home.name,
-        result: `${m.goals.home}-${m.goals.away}`,
-        won: (m.teams.home.id === match.teams.home.id && m.teams.home.winner) || (m.teams.away.id === match.teams.home.id && m.teams.away.winner),
-      }));
-
-      const awayFormSummary = awayForm.map((m) => ({
-        vs: m.teams.home.id === match.teams.away.id ? m.teams.away.name : m.teams.home.name,
-        result: `${m.goals.home}-${m.goals.away}`,
-        won: (m.teams.home.id === match.teams.away.id && m.teams.home.winner) || (m.teams.away.id === match.teams.away.id && m.teams.away.winner),
-      }));
-
       const matchData = {
         homeTeam: match.teams.home.name,
         awayTeam: match.teams.away.name,
+        homeTeamId: match.teams.home.id,
+        awayTeamId: match.teams.away.id,
         league: match.league.name,
-        odds: null,
-        h2h: h2hSummary,
-        homeForm: homeFormSummary,
-        awayForm: awayFormSummary,
+        h2h,
+        homeForm,
+        awayForm,
       };
 
-      const result = await generatePrediction(matchData);
-      setPrediction(result);
-      savePrediction(result, match);
+      const fullResult = await generateFullAnalysis(matchData);
+      setAiStats(fullResult.teamStats);
+      setPrediction(fullResult.prediction);
+      savePrediction(fullResult.prediction, match);
       toast.success('Análisis completado');
     } catch (err) {
       console.error(err);
-      toast.error('Error al generar análisis');
+      toast.error(err.message?.includes('Too many') ? 'Demasiadas solicitudes, espera unos segundos e intenta de nuevo' : 'Error al generar análisis');
     } finally {
       setLoading(false);
     }
@@ -151,11 +136,63 @@ export default function MatchDetailPage() {
       {loadingData ? (
         <div className="card p-6 flex items-center justify-center gap-2">
           <Loader2 size={18} className="animate-spin text-brand-500" />
-          <span className="text-sm text-slate-400">Cargando estadísticas...</span>
+          <span className="text-sm text-slate-400">Cargando estadísticas con IA...</span>
         </div>
       ) : (
+        <div className="space-y-4">
+          {/* AI Stats */}
+          {aiStats && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Home team stats */}
+              <div className="card p-4">
+                <h3 className="font-semibold text-sm mb-3 text-brand-400">{match.teams.home.name}</h3>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between"><span className="text-slate-500">Posición</span><span className="text-white">{aiStats.homeTeam?.currentPosition || '-'}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500">Goles/partido</span><span className="text-white">{aiStats.homeTeam?.goalsScored || '-'}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500">Goles recibidos</span><span className="text-white">{aiStats.homeTeam?.goalsConceded || '-'}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500">Record local</span><span className="text-white">{aiStats.homeTeam?.homeRecord || '-'}</span></div>
+                  <div className="flex gap-1 mt-2">
+                    {aiStats.homeTeam?.recentForm?.map((r, i) => (
+                      <span key={i} className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold ${r==='W'?'bg-success-500/20 text-success-400':r==='D'?'bg-slate-700 text-slate-400':'bg-danger-500/20 text-danger-400'}`}>{r}</span>
+                    ))}
+                  </div>
+                  {aiStats.homeTeam?.strengths && <p className="text-slate-400 mt-1">✓ {aiStats.homeTeam.strengths}</p>}
+                </div>
+              </div>
+              {/* Away team stats */}
+              <div className="card p-4">
+                <h3 className="font-semibold text-sm mb-3 text-brand-400">{match.teams.away.name}</h3>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between"><span className="text-slate-500">Posición</span><span className="text-white">{aiStats.awayTeam?.currentPosition || '-'}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500">Goles/partido</span><span className="text-white">{aiStats.awayTeam?.goalsScored || '-'}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500">Goles recibidos</span><span className="text-white">{aiStats.awayTeam?.goalsConceded || '-'}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500">Record visita</span><span className="text-white">{aiStats.awayTeam?.awayRecord || '-'}</span></div>
+                  <div className="flex gap-1 mt-2">
+                    {aiStats.awayTeam?.recentForm?.map((r, i) => (
+                      <span key={i} className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold ${r==='W'?'bg-success-500/20 text-success-400':r==='D'?'bg-slate-700 text-slate-400':'bg-danger-500/20 text-danger-400'}`}>{r}</span>
+                    ))}
+                  </div>
+                  {aiStats.awayTeam?.strengths && <p className="text-slate-400 mt-1">✓ {aiStats.awayTeam.strengths}</p>}
+                </div>
+              </div>
+              {/* H2H from AI */}
+              {aiStats.h2h && (
+                <div className="card p-4 md:col-span-2">
+                  <h3 className="font-semibold text-sm mb-2 flex items-center gap-2"><BarChart3 size={14} className="text-brand-400" /> Historial de enfrentamientos</h3>
+                  <div className="flex gap-4 text-xs mb-2">
+                    <span className="text-success-400">Local: {aiStats.h2h.homeTeamWins} victorias</span>
+                    <span className="text-slate-400">Empates: {aiStats.h2h.draws}</span>
+                    <span className="text-danger-400">Visita: {aiStats.h2h.awayTeamWins} victorias</span>
+                    <span className="text-slate-500">Goles promedio: {aiStats.h2h.typicalGoals}</span>
+                  </div>
+                  {aiStats.matchContext && <p className="text-xs text-warning-400">⚠ {aiStats.matchContext}</p>}
+                </div>
+              )}
+            </div>
+          )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* H2H */}
+          {/* H2H from API */}
           <div className="card p-4">
             <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
               <BarChart3 size={14} className="text-brand-400" /> Enfrentamientos directos
@@ -214,6 +251,7 @@ export default function MatchDetailPage() {
               </div>
             </div>
           </div>
+        </div>
         </div>
       )}
 
