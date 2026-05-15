@@ -4,7 +4,12 @@ const _p2 = 'XJRh7vgWGdyb3FY8HJO';
 const _p3 = 'DWivnKiRwWHK9OmHK26N';
 const GROQ_API_KEY = `${_p1}${_p2}${_p3}`;
 
-const groqFetch = async (messages, maxTokens = 2000) => {
+// compound-beta: Groq model with real-time web search built-in
+const COMPOUND_MODEL = 'compound-beta';
+const FAST_MODEL = 'llama-3.3-70b-versatile';
+
+const groqFetch = async (messages, maxTokens = 2000, useWebSearch = false) => {
+  const model = useWebSearch ? COMPOUND_MODEL : FAST_MODEL;
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -12,7 +17,7 @@ const groqFetch = async (messages, maxTokens = 2000) => {
       'Authorization': `Bearer ${GROQ_API_KEY}`,
     },
     body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
+      model,
       messages,
       max_tokens: maxTokens,
       temperature: 0.2,
@@ -56,14 +61,21 @@ export const generateFullAnalysis = async (matchData) => {
       }).join('')
     : null;
 
-  const prompt = `You are an expert football analyst and betting advisor with deep knowledge of ${league}.
+  const prompt = `You are an expert football analyst and betting advisor. Search the web for CURRENT 2025 statistics for this match.
 
 MATCH: ${homeTeam} vs ${awayTeam} (${league})
 ${h2hText ? `RECENT H2H FROM API: ${h2hText}` : ''}
 ${homeFormText ? `${homeTeam} RECENT FORM FROM API: ${homeFormText}` : ''}
 ${awayFormText ? `${awayTeam} RECENT FORM FROM API: ${awayFormText}` : ''}
 
-Provide a complete analysis in ONE JSON response:
+Search for current 2025 season statistics for both teams including:
+- Current league position and points
+- Goals scored and conceded this season
+- Recent form (last 5 matches)
+- Key players and injuries
+- Head to head history
+
+Then provide a complete analysis in ONE JSON response:
 
 {
   "teamStats": {
@@ -92,22 +104,22 @@ Provide a complete analysis in ONE JSON response:
       "avgGoals": "X.X",
       "lastResults": ["resultado1", "resultado2", "resultado3"]
     },
-    "context": "contexto del partido en español (lesiones, suspensiones, motivación)"
+    "context": "contexto actual del partido en español (lesiones, suspensiones, motivación, racha actual)"
   },
   "prediction": {
     "winner": "home",
     "confidence": 75,
     "predictedScore": "2-1",
-    "analysis": "análisis de 3-4 oraciones en español con estadísticas específicas",
+    "analysis": "análisis de 3-4 oraciones en español con estadísticas actuales específicas",
     "riskLevel": "medium",
     "valueRating": 7,
-    "keyFactors": ["factor1 en español", "factor2", "factor3"],
+    "keyFactors": ["factor1 en español con dato actual", "factor2", "factor3"],
     "recommendations": [
       {
         "type": "1X2",
         "pick": "Victoria Local",
         "confidence": 72,
-        "reasoning": "explicación en español con estadísticas"
+        "reasoning": "explicación en español con estadísticas actuales"
       },
       {
         "type": "Over/Under",
@@ -131,9 +143,10 @@ Provide a complete analysis in ONE JSON response:
   }
 }
 
-Use your knowledge of these teams. Be specific. Return ONLY the JSON.`;
+Return ONLY the JSON.`;
 
-  const content = await groqFetch([{ role: 'user', content: prompt }], 2500);
+  // Use compound-beta with web search for real-time stats
+  const content = await groqFetch([{ role: 'user', content: prompt }], 2500, true);
   return JSON.parse(content);
 };
 
