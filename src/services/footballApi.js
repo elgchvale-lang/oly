@@ -29,23 +29,20 @@ export const getFixtures = async (date) => {
 };
 
 /**
- * Get fixtures by league - uses date queries without season (free plan compatible)
+/**
+ * Get fixtures by league - single API call, filter client-side
  */
 export const getFixturesByLeague = async (leagueId, date) => {
   const d = date || new Date().toISOString().split('T')[0];
   const allMatches = await fetchApi(`/fixtures?date=${d}`);
   
   if (!allMatches || allMatches.length === 0) return [];
+  
+  // Show all matches if no league selected
+  if (!leagueId) return allMatches;
 
-  // If leagueId is 0 or null, return all matches
-  if (!leagueId) return allMatches.slice(0, 50);
-
-  // Filter by league
-  const leagueMatches = allMatches.filter((m) => m.league.id === leagueId);
-  if (leagueMatches.length > 0) return leagueMatches;
-
-  // If no matches for selected league, return all matches
-  return allMatches.slice(0, 50);
+  // Filter strictly by league - no fallback to all matches
+  return allMatches.filter((m) => m.league.id === leagueId);
 };
 
 /**
@@ -103,13 +100,16 @@ export const getStandings = async (leagueId, season) => {
  */
 export const LEAGUES = [
   { id: 265, name: '🇨🇱 Liga Chilena', country: 'Chile' },
+  { id: 266, name: '🇨🇱 Primera B Chile', country: 'Chile' },
   { id: 13, name: 'Copa Libertadores', country: 'South America' },
+  { id: 11, name: 'Copa Sudamericana', country: 'South America' },
   { id: 39, name: 'Premier League', country: 'England' },
   { id: 140, name: 'La Liga', country: 'Spain' },
   { id: 78, name: 'Bundesliga', country: 'Germany' },
   { id: 135, name: 'Serie A', country: 'Italy' },
   { id: 61, name: 'Ligue 1', country: 'France' },
   { id: 2, name: 'Champions League', country: 'Europe' },
+  { id: 3, name: 'Europa League', country: 'Europe' },
   { id: 71, name: 'Brasileirão', country: 'Brazil' },
   { id: 128, name: 'Liga Argentina', country: 'Argentina' },
   { id: 262, name: 'Liga MX', country: 'Mexico' },
