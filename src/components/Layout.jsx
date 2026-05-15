@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { Trophy, TrendingUp, History, Menu, X, Zap } from 'lucide-react';
+import { Trophy, TrendingUp, History, Menu, X, Zap, Layers } from 'lucide-react';
 
 const navItems = [
   { to: '/', label: 'Partidos', icon: Trophy, end: true },
-  { to: '/predictions', label: 'Predicciones IA', icon: TrendingUp },
+  { to: '/predictions', label: 'Predicciones', icon: TrendingUp },
+  { to: '/combined', label: 'Combinadas', icon: Layers },
   { to: '/history', label: 'Historial', icon: History },
 ];
 

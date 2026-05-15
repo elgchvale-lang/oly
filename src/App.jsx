@@ -5,6 +5,7 @@ import MatchesPage from './pages/MatchesPage';
 import MatchDetailPage from './pages/MatchDetailPage';
 import PredictionsPage from './pages/PredictionsPage';
 import HistoryPage from './pages/HistoryPage';
+import CombinedBetsPage from './pages/CombinedBetsPage';
 
 export default function App() {
   return (
@@ -13,6 +14,7 @@ export default function App() {
         <Route index element={<MatchesPage />} />
         <Route path="match/:matchId" element={<MatchDetailPage />} />
         <Route path="predictions" element={<PredictionsPage />} />
+        <Route path="combined" element={<CombinedBetsPage />} />
         <Route path="history" element={<HistoryPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
