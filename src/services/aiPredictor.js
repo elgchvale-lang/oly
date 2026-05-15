@@ -148,8 +148,8 @@ Then provide analysis as JSON:
 
 Return ONLY the JSON.`;
 
-  // Use compound-beta with web search for real-time stats
-  const content = await groqFetch([{ role: 'user', content: prompt }], 2500, true);
+  // Use llama-3.3-70b for stability (compound-beta hits rate limits)
+  const content = await groqFetch([{ role: 'user', content: prompt }], 2500, false);
   return JSON.parse(content);
 };
 

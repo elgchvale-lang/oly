@@ -38,47 +38,31 @@ export const getOdds = async (sportKey, markets = 'h2h,totals', regions = 'us,eu
 };
 
 /**
- * Find odds for a specific match by team names
+ * Find odds for a specific match - disabled to avoid rate limits
  */
-export const findMatchOdds = async (homeTeam, awayTeam, sportKey = 'soccer') => {
-  if (!ODDS_API_KEY) return null;
-  try {
-    // Try common soccer keys
-    const keys = [
-      'soccer_chile_primera_division',
-      'soccer_conmebol_copa_libertadores',
-      'soccer_epl',
-      'soccer_spain_la_liga',
-      'soccer_germany_bundesliga',
-      'soccer_italy_serie_a',
-      'soccer_france_ligue_one',
-      'soccer_uefa_champs_league',
-      'soccer_brazil_campeonato',
-      'soccer_argentina_primera_division',
-    ];
+export const findMatchOdds = async () => null;
 
-    for (const key of keys) {
-      const odds = await getOdds(key);
-      if (!odds || odds.length === 0) continue;
-
-      const match = odds.find((m) => {
-        const home = m.home_team.toLowerCase();
-        const away = m.away_team.toLowerCase();
-        return (
-          home.includes(homeTeam.toLowerCase().split(' ')[0]) ||
-          homeTeam.toLowerCase().includes(home.split(' ')[0])
-        ) && (
-          away.includes(awayTeam.toLowerCase().split(' ')[0]) ||
-          awayTeam.toLowerCase().includes(away.split(' ')[0])
-        );
-      });
-
-      if (match) return match;
+/**
+ * Extract clean odds from a match object
+ */
+export const extractOdds = (matchOdds) => {
+  if (!matchOdds || !matchOdds.bookmakers || matchOdds.bookmakers.length === 0) return null;
+  const bookmakers = matchOdds.bookmakers.slice(0, 2).map((bk) => {
+    const h2h = bk.markets.find((m) => m.key === 'h2h');
+    const totals = bk.markets.find((m) => m.key === 'totals');
+    const odds = { bookmaker: bk.title };
+    h2h?.outcomes?.forEach((o) => {
+      if (o.name === matchOdds.home_team) odds.home = o.price;
+      else if (o.name === matchOdds.away_team) odds.away = o.price;
+      else odds.draw = o.price;
+    });
+    if (totals?.outcomes) {
+      odds.over25 = totals.outcomes.find((o) => o.name === 'Over')?.price;
+      odds.under25 = totals.outcomes.find((o) => o.name === 'Under')?.price;
     }
-    return null;
-  } catch {
-    return null;
-  }
+    return odds;
+  });
+  return bookmakers;
 };
 
 /**
