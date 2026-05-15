@@ -61,41 +61,44 @@ export const generateFullAnalysis = async (matchData) => {
       }).join('')
     : null;
 
-  const prompt = `You are an expert football analyst and betting advisor. Search the web for CURRENT 2025 statistics for this match.
+  const prompt = `You are an expert football analyst. Search the web for CURRENT 2025-2026 season statistics for this match.
 
 MATCH: ${homeTeam} vs ${awayTeam} (${league})
-${h2hText ? `RECENT H2H FROM API: ${h2hText}` : ''}
-${homeFormText ? `${homeTeam} RECENT FORM FROM API: ${homeFormText}` : ''}
-${awayFormText ? `${awayTeam} RECENT FORM FROM API: ${awayFormText}` : ''}
+DATE: May 2026
+${h2hText ? `H2H FROM API: ${h2hText}` : ''}
+${homeFormText ? `${homeTeam} FORM FROM API: ${homeFormText}` : ''}
+${awayFormText ? `${awayTeam} FORM FROM API: ${awayFormText}` : ''}
 
-Search for current 2025 season statistics for both teams including:
-- Current league position and points
-- Goals scored and conceded this season
-- Recent form (last 5 matches)
-- Key players and injuries
-- Head to head history
+Search the web RIGHT NOW for:
+1. Current 2025-2026 season standings for ${league}
+2. ${homeTeam} current form, goals scored/conceded in 2025-2026
+3. ${awayTeam} current form, goals scored/conceded in 2025-2026
+4. Recent injuries or suspensions for both teams
+5. Last 3-5 head to head results between these teams
 
-Then provide a complete analysis in ONE JSON response:
+Then provide analysis as JSON:
 
 {
   "teamStats": {
     "home": {
       "recentForm": ["W","D","L","W","W"],
-      "goalsScored": "X.X por partido",
-      "goalsConceded": "X.X por partido",
-      "position": "Xo en la liga",
-      "homeRecord": "V-E-D",
-      "strengths": "fortalezas en español",
-      "keyPlayers": ["jugador1", "jugador2"]
+      "goalsScored": "X.X por partido en 2025-26",
+      "goalsConceded": "X.X por partido en 2025-26",
+      "position": "Xo en la liga 2025-26",
+      "homeRecord": "V-E-D en casa 2025-26",
+      "strengths": "fortalezas actuales en español",
+      "keyPlayers": ["jugador1", "jugador2"],
+      "injuries": "lesiones/suspensiones actuales o ninguna"
     },
     "away": {
       "recentForm": ["W","D","L","W","W"],
-      "goalsScored": "X.X por partido",
-      "goalsConceded": "X.X por partido",
-      "position": "Xo en la liga",
-      "awayRecord": "V-E-D",
-      "strengths": "fortalezas en español",
-      "keyPlayers": ["jugador1", "jugador2"]
+      "goalsScored": "X.X por partido en 2025-26",
+      "goalsConceded": "X.X por partido en 2025-26",
+      "position": "Xo en la liga 2025-26",
+      "awayRecord": "V-E-D de visita 2025-26",
+      "strengths": "fortalezas actuales en español",
+      "keyPlayers": ["jugador1", "jugador2"],
+      "injuries": "lesiones/suspensiones actuales o ninguna"
     },
     "h2h": {
       "homeWins": 0,
@@ -104,40 +107,40 @@ Then provide a complete analysis in ONE JSON response:
       "avgGoals": "X.X",
       "lastResults": ["resultado1", "resultado2", "resultado3"]
     },
-    "context": "contexto actual del partido en español (lesiones, suspensiones, motivación, racha actual)"
+    "context": "contexto actual mayo 2026 en español (forma reciente, motivación, importancia del partido)"
   },
   "prediction": {
     "winner": "home",
     "confidence": 75,
     "predictedScore": "2-1",
-    "analysis": "análisis de 3-4 oraciones en español con estadísticas actuales específicas",
+    "analysis": "análisis en español con datos actuales de la temporada 2025-26",
     "riskLevel": "medium",
     "valueRating": 7,
-    "keyFactors": ["factor1 en español con dato actual", "factor2", "factor3"],
+    "keyFactors": ["factor actual 1", "factor actual 2", "factor actual 3"],
     "recommendations": [
       {
         "type": "1X2",
         "pick": "Victoria Local",
         "confidence": 72,
-        "reasoning": "explicación en español con estadísticas actuales"
+        "reasoning": "razón con estadísticas actuales 2025-26"
       },
       {
         "type": "Over/Under",
         "pick": "Más de 2.5 goles",
         "confidence": 65,
-        "reasoning": "explicación en español"
+        "reasoning": "razón en español"
       },
       {
         "type": "Ambos Marcan",
         "pick": "Sí",
         "confidence": 60,
-        "reasoning": "explicación en español"
+        "reasoning": "razón en español"
       },
       {
         "type": "Resultado Exacto",
         "pick": "2-1",
         "confidence": 25,
-        "reasoning": "explicación en español"
+        "reasoning": "razón en español"
       }
     ]
   }
