@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader2, TrendingUp, Target, AlertTriangle, BarChart3, DollarSign } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getH2H, getTeamLastMatches } from '../services/footballApi';
-import { findMatchOdds, extractOdds } from '../services/oddsApi';
+// Odds disabled to avoid rate limits
+// import { findMatchOdds, extractOdds } from '../services/oddsApi';
 import { generatePrediction, generateFullAnalysis, getTeamStatsFromAI } from '../services/aiPredictor';
 
 const RISK_COLORS = { low: 'badge-green', medium: 'badge-yellow', high: 'badge-red' };
@@ -64,10 +65,10 @@ export default function MatchDetailPage() {
       if (homeResult.status === 'fulfilled') setHomeForm(homeResult.value || []);
       if (awayResult.status === 'fulfilled') setAwayForm(awayResult.value || []);
 
-      // Load odds in background
-      findMatchOdds(match.teams.home.name, match.teams.away.name).then((matchOdds) => {
-        if (matchOdds) setOdds(extractOdds(matchOdds));
-      }).catch(() => {});
+      // Odds disabled - causes too many API calls
+      // findMatchOdds(match.teams.home.name, match.teams.away.name).then((matchOdds) => {
+      //   if (matchOdds) setOdds(extractOdds(matchOdds));
+      // }).catch(() => {});
     } catch (err) {
       console.error('Error loading data:', err);
     } finally {
