@@ -84,34 +84,13 @@ Return ONLY this JSON (no extra text):
   };
 
   const fetchMatchPrediction = async (matchOverride = null) => {
-    const match = matchOverride || selectedMatch;
-    if (!match.trim()) { toast.error('Ingresa el partido'); return; }
+    const match = (typeof matchOverride === 'string' ? matchOverride : selectedMatch).trim();
+    if (!match) { toast.error('Ingresa el partido'); return; }
     setLoading(true);
     try {
       const today = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
-      const prompt = `Search the web for LIVE World Cup 2026 stats for this match: ${match}. Today is ${today}.
-
-Find current tournament stats, goals, form, injuries for both teams.
-
-Return ONLY this JSON:
-{
-  "match": "${match}",
-  "team1Stats": {"name":"Country","form":["W","W","D"],"goalsScored":4,"goalsConceded":1,"keyPlayers":["p1","p2"],"injuries":"none"},
-  "team2Stats": {"name":"Country","form":["W","L","W"],"goalsScored":2,"goalsConceded":2,"keyPlayers":["p1","p2"],"injuries":"none"},
-  "prediction": {
-    "winner": "team1",
-    "confidence": 70,
-    "predictedScore": "2-1",
-    "analysis": "3 sentences in Spanish with current World Cup stats",
-    "riskLevel": "medium",
-    "recommendations": [
-      {"type":"1X2","pick":"Victoria Local","confidence":70,"reasoning":"Spanish with stats"},
-      {"type":"Over/Under","pick":"Más de 2.5 goles","confidence":65,"reasoning":"Spanish"},
-      {"type":"Ambos Marcan","pick":"Sí","confidence":60,"reasoning":"Spanish"}
-    ],
-    "keyFactors": ["current factor 1 Spanish","factor 2","factor 3"]
-  }
-}`;
+      const prompt = `Search web: FIFA World Cup 2026 match ${match} (${today}). Return JSON only:
+{"match":"${match}","team1Stats":{"name":"t1","form":["W","W","D"],"goalsScored":3,"goalsConceded":1,"keyPlayers":["p1","p2"],"injuries":"none"},"team2Stats":{"name":"t2","form":["L","W","W"],"goalsScored":2,"goalsConceded":2,"keyPlayers":["p1","p2"],"injuries":"none"},"prediction":{"winner":"team1","confidence":70,"predictedScore":"2-1","analysis":"3 sentences Spanish with current stats","riskLevel":"medium","recommendations":[{"type":"1X2","pick":"Victoria Local","confidence":70,"reasoning":"Spanish"},{"type":"Over/Under","pick":"Más de 2.5","confidence":65,"reasoning":"Spanish"},{"type":"Ambos Marcan","pick":"Sí","confidence":60,"reasoning":"Spanish"}],"keyFactors":["factor1 Spanish","factor2","factor3"]}}`;
 
       const result = await groqSearch(prompt, 1500);
       setData({ type: 'match', content: JSON.parse(result) });
