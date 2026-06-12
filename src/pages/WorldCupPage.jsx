@@ -8,6 +8,7 @@ const _p3 = 'DWivnKiRwWHK9OmHK26N';
 const GROQ_KEY = `${_p1}${_p2}${_p3}`;
 
 const groqSearch = async (prompt, maxTokens = 1500) => {
+  // v2 - llama-3.3-70b only, no compound-beta
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_KEY}` },
