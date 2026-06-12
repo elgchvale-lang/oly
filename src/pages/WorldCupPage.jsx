@@ -12,7 +12,7 @@ const groqSearch = async (prompt, maxTokens = 2500) => {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_KEY}` },
     body: JSON.stringify({
-      model: 'compound-beta',
+      model: 'llama-3.3-70b-versatile',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: maxTokens,
       temperature: 0.2,
@@ -39,44 +39,33 @@ export default function WorldCupPage() {
   const fetchOverview = async () => {
     setLoading(true);
     try {
-      const prompt = `Search the web for the FIFA World Cup 2026 current status as of June 2026.
+      const prompt = `You are an expert on the FIFA World Cup 2026 (USA-Canada-Mexico). It is June 2026. Use your knowledge of the tournament.
 
-Provide a JSON with:
+Return a JSON with current World Cup 2026 status:
 {
-  "phase": "current phase (Groups, Round of 32, Round of 16, Quarterfinals, Semifinals, Final)",
+  "phase": "current phase",
+  "summary": "2-3 sentences about the tournament in Spanish",
   "nextMatches": [
-    {
-      "team1": "Country",
-      "team2": "Country",
-      "date": "date and time",
-      "group": "Group X or Round name",
-      "venue": "city"
-    }
+    { "team1": "Country", "team2": "Country", "date": "date", "group": "Group X", "venue": "city" }
   ],
   "topScorers": [
-    { "player": "Name", "country": "Country", "goals": 0 }
+    { "player": "Name", "country": "Country", "goals": 3 }
   ],
   "groupStandings": [
-    {
-      "group": "A",
-      "teams": [
-        { "team": "Country", "played": 0, "won": 0, "drawn": 0, "lost": 0, "gf": 0, "ga": 0, "points": 0 }
-      ]
-    }
+    { "group": "A", "teams": [{ "team": "Country", "played": 2, "won": 1, "drawn": 1, "lost": 0, "gf": 3, "ga": 1, "points": 4 }] }
   ],
   "favorites": [
-    { "team": "Country", "probability": "XX%", "reason": "brief reason in Spanish" }
-  ],
-  "summary": "2-3 sentences about the current state of the tournament in Spanish"
+    { "team": "Country", "probability": "25%", "reason": "reason in Spanish" }
+  ]
 }
 
 Return ONLY the JSON.`;
 
-      const result = await groqSearch(prompt, 3000);
+      const result = await groqSearch(prompt, 2000);
       setData({ type: 'overview', content: JSON.parse(result) });
-      toast.success('Datos del Mundial actualizados');
+      toast.success('Datos del Mundial cargados');
     } catch (err) {
-      toast.error(err.message?.includes('Too many') ? 'Espera unos segundos e intenta de nuevo' : 'Error al cargar datos');
+      toast.error('Error al cargar datos. Intenta de nuevo.');
       console.error(err);
     } finally {
       setLoading(false);
@@ -87,58 +76,35 @@ Return ONLY the JSON.`;
     if (!selectedMatch.trim()) { toast.error('Ingresa el partido'); return; }
     setLoading(true);
     try {
-      const prompt = `Search the web for current 2026 FIFA World Cup statistics and predict this match: ${selectedMatch}
-
-Find:
-1. Current tournament stats for both teams (goals scored, goals conceded, form)
-2. Key players and any injuries/suspensions
-3. Head to head history in World Cups
-4. Historical World Cup performance of both teams
+      const prompt = `You are a FIFA World Cup 2026 expert. It is June 2026. Analyze this match: ${selectedMatch}
 
 Return JSON:
 {
   "match": "${selectedMatch}",
-  "team1Stats": {
-    "name": "Country",
-    "form": ["W","W","D"],
-    "goalsScored": 0,
-    "goalsConceded": 0,
-    "keyPlayers": ["player1", "player2"],
-    "injuries": "injuries or none",
-    "worldCupHistory": "brief history"
-  },
-  "team2Stats": {
-    "name": "Country",
-    "form": ["W","L","W"],
-    "goalsScored": 0,
-    "goalsConceded": 0,
-    "keyPlayers": ["player1", "player2"],
-    "injuries": "injuries or none",
-    "worldCupHistory": "brief history"
-  },
-  "h2hWorldCup": "H2H in World Cups",
+  "team1Stats": { "name": "Country", "form": ["W","W","D"], "goalsScored": 4, "goalsConceded": 1, "keyPlayers": ["p1","p2"], "injuries": "none", "worldCupHistory": "brief" },
+  "team2Stats": { "name": "Country", "form": ["W","L","W"], "goalsScored": 2, "goalsConceded": 2, "keyPlayers": ["p1","p2"], "injuries": "none", "worldCupHistory": "brief" },
+  "h2hWorldCup": "H2H summary",
   "prediction": {
-    "winner": "team1 | team2 | draw",
+    "winner": "team1",
     "confidence": 70,
-    "predictedScore": "X-X",
-    "analysis": "3-4 sentences in Spanish with current stats",
-    "riskLevel": "low | medium | high",
+    "predictedScore": "2-1",
+    "analysis": "3 sentences in Spanish",
+    "riskLevel": "medium",
     "recommendations": [
-      { "type": "1X2", "pick": "pick in Spanish", "confidence": 70, "reasoning": "in Spanish" },
-      { "type": "Over/Under", "pick": "pick", "confidence": 65, "reasoning": "in Spanish" },
-      { "type": "Ambos Marcan", "pick": "Sí/No", "confidence": 60, "reasoning": "in Spanish" }
+      { "type": "1X2", "pick": "pick", "confidence": 70, "reasoning": "Spanish" },
+      { "type": "Over/Under", "pick": "Más de 2.5", "confidence": 65, "reasoning": "Spanish" },
+      { "type": "Ambos Marcan", "pick": "Sí", "confidence": 60, "reasoning": "Spanish" }
     ],
-    "keyFactors": ["factor1 in Spanish", "factor2", "factor3"]
+    "keyFactors": ["factor1 Spanish", "factor2", "factor3"]
   }
 }
-
 Return ONLY the JSON.`;
 
-      const result = await groqSearch(prompt, 3000);
+      const result = await groqSearch(prompt, 1800);
       setData({ type: 'match', content: JSON.parse(result) });
       toast.success('Predicción generada');
     } catch (err) {
-      toast.error(err.message?.includes('Too many') ? 'Espera unos segundos e intenta de nuevo' : 'Error al generar predicción');
+      toast.error('Error al generar predicción. Intenta de nuevo.');
       console.error(err);
     } finally {
       setLoading(false);
@@ -148,53 +114,47 @@ Return ONLY the JSON.`;
   const fetchCombined = async () => {
     setLoading(true);
     try {
-      const prompt = `Search the web for today's and upcoming FIFA World Cup 2026 matches as of June 2026.
+      const prompt = `You are a FIFA World Cup 2026 betting expert. It is June 2026. Create 3 combined bets for today's World Cup matches.
 
-Create 3 combined betting options based on current World Cup matches:
-
-Return JSON array:
+Return JSON array with exactly 3 items:
 [
   {
     "name": "Combinada Segura Mundial",
     "riskLevel": "low",
-    "estimatedOdds": "X.XX",
-    "combinedProbability": 70,
+    "estimatedOdds": "2.50",
+    "combinedProbability": 68,
     "selections": [
-      {
-        "match": "Country vs Country",
-        "pick": "pick in Spanish",
-        "type": "bet type",
-        "confidence": 80,
-        "reasoning": "based on current World Cup stats in Spanish"
-      }
+      { "match": "Country vs Country", "pick": "pick Spanish", "type": "1X2", "confidence": 78, "reasoning": "Spanish reason" },
+      { "match": "Country vs Country", "pick": "pick Spanish", "type": "Over/Under", "confidence": 72, "reasoning": "Spanish reason" },
+      { "match": "Country vs Country", "pick": "pick Spanish", "type": "Ambos Marcan", "confidence": 70, "reasoning": "Spanish reason" }
     ],
-    "analysis": "analysis in Spanish with current World Cup data"
+    "analysis": "2 sentences in Spanish"
   },
   {
     "name": "Combinada Equilibrada Mundial",
     "riskLevel": "medium",
-    "estimatedOdds": "X.XX",
-    "combinedProbability": 50,
-    "selections": [...],
-    "analysis": "..."
+    "estimatedOdds": "5.80",
+    "combinedProbability": 48,
+    "selections": [...4 picks...],
+    "analysis": "2 sentences in Spanish"
   },
   {
     "name": "Combinada Arriesgada Mundial",
     "riskLevel": "high",
-    "estimatedOdds": "X.XX",
-    "combinedProbability": 30,
-    "selections": [...],
-    "analysis": "..."
+    "estimatedOdds": "14.00",
+    "combinedProbability": 28,
+    "selections": [...5 picks...],
+    "analysis": "2 sentences in Spanish"
   }
 ]
 
-Return ONLY the JSON array.`;
+Use real World Cup 2026 matches happening today or soon. Return ONLY the JSON array.`;
 
-      const result = await groqSearch(prompt, 3000);
+      const result = await groqSearch(prompt, 2000);
       setData({ type: 'combined', content: JSON.parse(result) });
       toast.success('Combinadas del Mundial generadas');
     } catch (err) {
-      toast.error(err.message?.includes('Too many') ? 'Espera unos segundos e intenta de nuevo' : 'Error al generar combinadas');
+      toast.error('Error al generar combinadas. Intenta de nuevo.');
       console.error(err);
     } finally {
       setLoading(false);
