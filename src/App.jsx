@@ -6,6 +6,7 @@ import MatchDetailPage from './pages/MatchDetailPage';
 import PredictionsPage from './pages/PredictionsPage';
 import HistoryPage from './pages/HistoryPage';
 import CombinedBetsPage from './pages/CombinedBetsPage';
+import WorldCupPage from './pages/WorldCupPage';
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
         <Route path="match/:matchId" element={<MatchDetailPage />} />
         <Route path="predictions" element={<PredictionsPage />} />
         <Route path="combined" element={<CombinedBetsPage />} />
+        <Route path="worldcup" element={<WorldCupPage />} />
         <Route path="history" element={<HistoryPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

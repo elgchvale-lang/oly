@@ -6,6 +6,7 @@ const navItems = [
   { to: '/', label: 'Partidos', icon: Trophy, end: true },
   { to: '/predictions', label: 'Predicciones', icon: TrendingUp },
   { to: '/combined', label: 'Combinadas', icon: Layers },
+  { to: '/worldcup', label: '🏆 Mundial', icon: Trophy },
   { to: '/history', label: 'Historial', icon: History },
 ];
 
