@@ -8,12 +8,11 @@ const _p3 = 'DWivnKiRwWHK9OmHK26N';
 const GROQ_KEY = `${_p1}${_p2}${_p3}`;
 
 const groqSearch = async (prompt, maxTokens = 1500) => {
-  // Use compound-beta for real-time web search (World Cup live data)
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_KEY}` },
     body: JSON.stringify({
-      model: 'compound-beta-mini', // lighter model = less rate limit
+      model: 'llama-3.3-70b-versatile',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: maxTokens,
       temperature: 0.1,
@@ -21,23 +20,6 @@ const groqSearch = async (prompt, maxTokens = 1500) => {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    // Fallback to llama if compound-beta-mini fails
-    if (res.status === 429 || res.status === 400) {
-      const res2 = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_KEY}` },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [{ role: 'user', content: prompt }],
-          max_tokens: maxTokens,
-          temperature: 0.1,
-        }),
-      });
-      if (!res2.ok) throw new Error(`Error: ${res2.status}`);
-      const data2 = await res2.json();
-      const c2 = data2.choices[0].message.content.trim();
-      return c2.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
-    }
     throw new Error(err.error?.message || `Error: ${res.status}`);
   }
   const data = await res.json();
