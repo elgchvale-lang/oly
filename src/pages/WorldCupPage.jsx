@@ -83,18 +83,19 @@ Return ONLY this JSON (no extra text):
     }
   };
 
-  const fetchMatchPrediction = async () => {
-    if (!selectedMatch.trim()) { toast.error('Ingresa el partido'); return; }
+  const fetchMatchPrediction = async (matchOverride = null) => {
+    const match = matchOverride || selectedMatch;
+    if (!match.trim()) { toast.error('Ingresa el partido'); return; }
     setLoading(true);
     try {
       const today = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
-      const prompt = `Search the web for LIVE World Cup 2026 stats for this match: ${selectedMatch}. Today is ${today}.
+      const prompt = `Search the web for LIVE World Cup 2026 stats for this match: ${match}. Today is ${today}.
 
 Find current tournament stats, goals, form, injuries for both teams.
 
 Return ONLY this JSON:
 {
-  "match": "${selectedMatch}",
+  "match": "${match}",
   "team1Stats": {"name":"Country","form":["W","W","D"],"goalsScored":4,"goalsConceded":1,"keyPlayers":["p1","p2"],"injuries":"none"},
   "team2Stats": {"name":"Country","form":["W","L","W"],"goalsScored":2,"goalsConceded":2,"keyPlayers":["p1","p2"],"injuries":"none"},
   "prediction": {
@@ -297,7 +298,11 @@ IMPORTANT: Only use REAL matches from World Cup 2026 happening today or tomorrow
                         </div>
                         <p className="text-xs text-slate-500 mt-1 text-center">{m.date}</p>
                         <button
-                          onClick={() => { setSelectedMatch(`${m.team1} vs ${m.team2}`); fetchMatchPrediction(); }}
+                          onClick={() => { 
+                            const matchName = `${m.team1} vs ${m.team2}`;
+                            setSelectedMatch(matchName);
+                            fetchMatchPrediction(matchName);
+                          }}
                           className="w-full mt-2 text-xs btn-primary py-1.5"
                         >
                           Predecir este partido
